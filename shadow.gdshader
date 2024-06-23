@@ -23,7 +23,7 @@ void vertex() {
 // fragment downscaling "trail" fix
 // while downscaling an element in fragment(), it makes a "trail" of the last pixel in X and Y
 vec4 hideExtra(vec2 uv, sampler2D txtr, bool isMain) {
-	if (uv.y <= 1.0 && uv.x <= 1.0) {
+	if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
 		vec4 texColor = texture(txtr, uv);
 		return isMain ? texColor : vec4(color.rgb, texColor.a);
 	}
