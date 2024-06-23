@@ -2,7 +2,7 @@ __Let's make it better:__ [<img src="https://img.shields.io/github/issues/tabmk/
 
 #### __Rate__ [<img src="https://img.shields.io/github/stars/tabmk/godot-2d-shadow-shader?style=social">](https://github.com/TABmk/godot-2d-shadow-shader)
 
-# Fog of war for Godot 4+
+# 2D shadows shader for Godot 4+
 
 <p align="center">
 <img width="80%" src="./preview/1.png">
