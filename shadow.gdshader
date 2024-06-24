@@ -32,7 +32,7 @@ vec4 hideExtra(vec2 uv, sampler2D txtr, bool isMain) {
 
 void fragment() {
 	// size of a single pixel
-	float singlePX = TEXTURE_PIXEL_SIZE.x;
+	vec2 singlePX = TEXTURE_PIXEL_SIZE;
 
 	// main downscaled and centered element
 	vec2 uv = UV * borderScale - (0.5 * (borderScale - 1.0));
