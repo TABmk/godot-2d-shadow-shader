@@ -25,7 +25,7 @@ void vertex() {
 vec4 hideExtra(vec2 uv, sampler2D txtr, bool isMain) {
 	if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
 		vec4 texColor = texture(txtr, uv);
-		return isMain ? texColor : vec4(color.rgb, texColor.a);
+		return isMain ? texColor : vec4(color.rgb, texColor.a - (1.0 - color.a));
 	}
 	return vec4(0.0);
 }
