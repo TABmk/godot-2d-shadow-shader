@@ -1,4 +1,4 @@
-// version: 1.0
+// version: 1.1
 // repository: https://github.com/TABmk/godot-2d-shadow-shader
 
 shader_type canvas_item;
