@@ -6,6 +6,7 @@ shader_type canvas_item;
 uniform float borderScale = 2.0;
 uniform vec2 offset = vec2(-10.0, -10.0);
 uniform vec4 color : source_color;
+uniform vec4 modulate : source_color = vec4(1.0);
 // turn this on to see where the shadow will be clipped
 uniform bool debug = false;
 
@@ -37,6 +38,9 @@ void fragment() {
 	// main downscaled and centered element
 	vec2 uv = UV * borderScale - (0.5 * (borderScale - 1.0));
 	vec4 uv_texture = hideExtra(uv, TEXTURE, true);
+
+	// apply custom modulate to main sprite
+	uv_texture *= modulate;
 
 	// same element, but with offset
 	vec2 shadow_uv = uv + offset * singlePX;
