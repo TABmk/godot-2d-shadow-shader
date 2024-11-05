@@ -1,54 +1,91 @@
-// version: 1.1
+// version: 2.0
 // repository: https://github.com/TABmk/godot-2d-shadow-shader
 
 shader_type canvas_item;
 
-uniform float borderScale = 2.0;
-uniform vec2 offset = vec2(-10.0, -10.0);
+uniform float border_scale = 2.0;
+uniform vec2 shadow_offset = vec2(-10.0, -10.0);
 uniform vec4 color : source_color;
-uniform vec4 modulate : source_color = vec4(1.0);
-// turn this on to see where the shadow will be clipped
-uniform bool debug = false;
+uniform float blur_amount : hint_range(0.0, 5.0) = 1.0;
+uniform float shadow_scale = 1.5;
+uniform bool disable_rotating = false;
 
-// fragment() function works properly only within the area of an element.
-// We can scale this area by scaling the entire element within vertex(), and then scaling it down in fragment().
+varying flat vec4 modulate;
+varying flat float sprite_rotation;
 
-// fragment works properly only iside element's area. But we can scale this area
-// by scaling whole element inside vertex() and then downscale it in fragment()
-
-// scaling element
 void vertex() {
-	VERTEX.xy *= vec2(borderScale);
+    float final_scale = max(border_scale, border_scale * shadow_scale);
+    VERTEX.xy *= vec2(final_scale);
+    modulate = COLOR;
+    sprite_rotation = atan(MODEL_MATRIX[0][1], MODEL_MATRIX[0][0]);
 }
 
-// fragment downscaling "trail" fix
-// while downscaling an element in fragment(), it makes a "trail" of the last pixel in X and Y
-vec4 hideExtra(vec2 uv, sampler2D txtr, bool isMain) {
-	if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
-		vec4 texColor = texture(txtr, uv);
-		return isMain ? texColor : vec4(color.rgb, texColor.a - (1.0 - color.a));
-	}
-	return vec4(0.0);
+vec4 sample_texture_safe(sampler2D tex, vec2 uv) {
+    return (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) 
+        ? vec4(0.0) 
+        : texture(tex, uv);
+}
+
+vec4 apply_gaussian_blur(sampler2D tex, vec2 uv, vec2 pixel_size) {
+    if (blur_amount <= 0.0) return sample_texture_safe(tex, uv);
+    
+    vec4 color_blur = vec4(0.0);
+    float total_weight = 0.0;
+    int kernel_size = int(blur_amount * 3.0);
+    
+    for (int x = -kernel_size; x <= kernel_size; x++) {
+        for (int y = -kernel_size; y <= kernel_size; y++) {
+            vec2 blur_offset = vec2(float(x), float(y)) * pixel_size;
+            float weight = exp(-0.5 * (float(x * x + y * y)) / (blur_amount * blur_amount));
+            color_blur += sample_texture_safe(tex, uv + blur_offset) * weight;
+            total_weight += weight;
+        }
+    }
+    
+    return total_weight > 0.0 ? color_blur / total_weight : vec4(0.0);
+}
+
+vec2 rotate_point(vec2 point, float angle) {
+    float s = sin(angle);
+    float c = cos(angle);
+    return vec2(
+        point.x * c - point.y * s,
+        point.x * s + point.y * c
+    );
+}
+
+float calculate_fade(float coord, float scale) {
+    if (coord < 0.0) {
+        return 1.0 + (coord / (scale - 1.0));
+    } else if (coord > 1.0) {
+        return 1.0 - ((coord - 1.0) / (scale - 1.0));
+    }
+    return 1.0;
+}
+
+vec4 process_texture(vec2 uv, sampler2D tex, bool is_main, vec2 pixel_size) {
+    if (is_main) {
+        return sample_texture_safe(tex, uv) * modulate;
+    }
+    
+    vec4 blurred = apply_gaussian_blur(tex, uv, pixel_size);
+    float fade_x = calculate_fade(uv.x, shadow_scale);
+    float fade_y = calculate_fade(uv.y, shadow_scale);
+    float fade = smoothstep(0.0, 1.0, min(fade_x, fade_y));
+    
+    return vec4(color.rgb, (blurred.a - (1.0 - color.a)) * modulate.a * fade);
 }
 
 void fragment() {
-	// size of a single pixel
-	vec2 singlePX = TEXTURE_PIXEL_SIZE;
-
-	// main downscaled and centered element
-	vec2 uv = UV * borderScale - (0.5 * (borderScale - 1.0));
-	vec4 uv_texture = hideExtra(uv, TEXTURE, true);
-
-	// apply custom modulate to main sprite
-	uv_texture *= modulate;
-
-	// same element, but with offset
-	vec2 shadow_uv = uv + offset * singlePX;
-	vec4 shadow = hideExtra(shadow_uv, TEXTURE, false);
-
-	// show main element on top of shadow
-	vec4 res = mix(shadow, uv_texture, uv_texture.a);
-	// debug layer. Turn on if you need a big offset
-	vec4 debug_layer = vec4(1.0, 0.0, 0.0, 0.3);
-	COLOR = mix(debug ? debug_layer : res, res, res.a);
+    float final_scale = max(border_scale, border_scale * shadow_scale);
+    vec2 scaled_uv = UV * final_scale - (0.5 * (final_scale - 1.0));
+    
+    vec4 main_texture = process_texture(scaled_uv, TEXTURE, true, TEXTURE_PIXEL_SIZE);
+    
+    vec2 adjusted_offset = disable_rotating ? shadow_offset : rotate_point(shadow_offset, -sprite_rotation);
+    vec2 shadow_uv = scaled_uv + adjusted_offset * TEXTURE_PIXEL_SIZE;
+    
+    vec4 shadow = process_texture(shadow_uv, TEXTURE, false, TEXTURE_PIXEL_SIZE);
+    
+    COLOR = mix(shadow, main_texture, main_texture.a);
 }
