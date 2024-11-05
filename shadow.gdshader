@@ -3,10 +3,11 @@
 
 shader_type canvas_item;
 
+uniform bool debug = false;
 uniform float border_scale = 2.0;
 uniform vec2 shadow_offset = vec2(-10.0, -10.0);
 uniform vec4 color : source_color;
-uniform float blur_amount : hint_range(0.0, 5.0) = 1.0;
+uniform float blur_amount : hint_range(0.0, 5.0) = 0.0;
 uniform float shadow_scale = 1.5;
 uniform bool disable_rotating = false;
 
@@ -87,5 +88,7 @@ void fragment() {
     
     vec4 shadow = process_texture(shadow_uv, TEXTURE, false, TEXTURE_PIXEL_SIZE);
     
-    COLOR = mix(shadow, main_texture, main_texture.a);
+    vec4 res = mix(shadow, main_texture, main_texture.a);
+	vec4 debug_layer = vec4(1.0, 0.0, 0.0, 0.3);
+	COLOR = mix(debug ? debug_layer : res, res, res.a);
 }

@@ -13,10 +13,13 @@ __Let's make it better:__ [<img src="https://img.shields.io/github/issues/tabmk/
 - Any color
 - debug helper
 - no need to prepare an image
+- 🆕 uses `modulate` from parent, including alpha for shadow
+- 🆕 shadow blur. Blur goes out of shadow bounds
+- 🆕 new option for handling parents' rotation
 
 ## Video (clickable)
 
-[![Click](https://img.youtube.com/vi/PBE6ZlaGigI/0.jpg)](https://www.youtube.com/watch?v=PBE6ZlaGigI)
+[![Click](https://img.youtube.com/vi/9rneonV7nQ0/0.jpg)](https://youtu.be/9rneonV7nQ0)
 
 ## How to use
 1) Add [shadow.gdshader](https://github.com/TABmk/godot-2d-shadow-shader/blob/master/shadow.gdshader) to your project
