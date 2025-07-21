@@ -1,4 +1,4 @@
-// version: 2.0
+// version: 2.1
 // repository: https://github.com/TABmk/godot-2d-shadow-shader
 
 shader_type canvas_item;
@@ -74,7 +74,7 @@ vec4 process_texture(vec2 uv, sampler2D tex, bool is_main, vec2 pixel_size) {
     float fade_y = calculate_fade(uv.y, shadow_scale);
     float fade = smoothstep(0.0, 1.0, min(fade_x, fade_y));
     
-    return vec4(color.rgb, (blurred.a - (1.0 - color.a)) * modulate.a * fade);
+    return vec4(color.rgb, (blurred.a * color.a) * modulate.a * fade);
 }
 
 void fragment() {
@@ -88,7 +88,15 @@ void fragment() {
     
     vec4 shadow = process_texture(shadow_uv, TEXTURE, false, TEXTURE_PIXEL_SIZE);
     
-    vec4 res = mix(shadow, main_texture, main_texture.a);
-	vec4 debug_layer = vec4(1.0, 0.0, 0.0, 0.3);
-	COLOR = mix(debug ? debug_layer : res, res, res.a);
+    vec4 main_pm = vec4(main_texture.rgb * main_texture.a, main_texture.a);
+    vec4 shadow_pm = vec4(shadow.rgb * shadow.a, shadow.a);
+
+    vec4 out_pm = shadow_pm * (1.0 - main_pm.a) + main_pm;
+    vec4 res = vec4(
+        out_pm.rgb / max(out_pm.a, 0.0001),
+        out_pm.a
+    );
+
+    vec4 debug_layer = vec4(1.0, 0.0, 0.0, 0.3);
+    COLOR = mix(debug ? debug_layer : res, res, res.a);
 }
